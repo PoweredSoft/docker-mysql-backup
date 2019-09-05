@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  poweredsoft.docker.mysqlbackup:
+    image: ${DOCKER_REGISTRY-}poweredsoftdockermysqlbackup
+    build:
+      context: .
+      dockerfile: PoweredSoft.Docker.MysqlBackup/Dockerfile
