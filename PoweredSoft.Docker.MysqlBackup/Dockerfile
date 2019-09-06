@@ -3,10 +3,10 @@ WORKDIR /app
 
 FROM microsoft/dotnet:2.2-sdk AS build
 WORKDIR /src
-COPY PoweredSoft.Docker.MysqlBackup/PoweredSoft.Docker.MysqlBackup.csproj PoweredSoft.Docker.MysqlBackup/
-RUN dotnet restore PoweredSoft.Docker.MysqlBackup/PoweredSoft.Docker.MysqlBackup.csproj
+COPY PoweredSoft.Docker.MysqlBackup.csproj ./
+RUN dotnet restore
 COPY . .
-WORKDIR /src/PoweredSoft.Docker.MysqlBackup
+WORKDIR /src
 RUN dotnet build PoweredSoft.Docker.MysqlBackup.csproj -c Release -o /app
 
 FROM build AS publish
