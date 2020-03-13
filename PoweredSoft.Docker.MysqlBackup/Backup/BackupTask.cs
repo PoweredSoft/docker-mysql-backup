@@ -127,7 +127,7 @@ namespace PoweredSoft.Docker.MysqlBackup.Backup
                         using (var fs = new FileStream(zippedTempFile, FileMode.Open, FileAccess.Read))
                         {
                             await storageProvider.WriteFileAsync(fs, destination);
-                            Console.WriteLine("Succesfully transfered backup to FTP host.");
+                            Console.WriteLine("Succesfully transfered backup to storage");
                         }
 
                         try
