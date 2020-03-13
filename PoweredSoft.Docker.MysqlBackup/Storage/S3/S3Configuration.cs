@@ -11,5 +11,6 @@ namespace PoweredSoft.Docker.MysqlBackup.Storage.S3
         public string BucketName { get; set; }
         public string AccessKey { get; set; }
         public string Secret { get; set; }
+        public bool Minio { get; set; } = false;
     }
 }

@@ -122,7 +122,18 @@ namespace PoweredSoft.Docker.MysqlBackup
                 if (azureCfg.Enabled)
                     return new AzureBlobStorageProvider(azureCfg.ConnectionString, azureCfg.ContainerName);
                 if (s3Cfg.Enabled)
-                    return new MinioStorageProvider(s3Cfg.Endpoint, s3Cfg.BucketName, s3Cfg.AccessKey, s3Cfg.Secret);
+                {
+                    var s3 = new S3StorageProvider(s3Cfg.Endpoint, s3Cfg.BucketName, s3Cfg.AccessKey, s3Cfg.Secret);
+                    
+                    if (s3Cfg.Minio)
+                    {
+                        s3.SetForcePathStyle(true);
+                        s3.SetS3UsEast1RegionalEndpointValue(Amazon.Runtime.S3UsEast1RegionalEndpointValue.Legacy);
+                    }
+
+                    return s3;
+
+                }
                 if (physicalCfg.Enabled)
                     return new PhysicalStorageProvider();
 
