@@ -8,6 +8,14 @@
     <LangVersion>8.0</LangVersion>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Dockerfile" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Dockerfile" />
+  </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="DotNetZip" Version="1.13.3" />
