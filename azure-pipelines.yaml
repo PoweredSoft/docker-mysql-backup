@@ -20,7 +20,7 @@ steps:
 - task: Docker@2
   inputs:
     containerRegistry: 'PoweredSoftDockerHub'
-    repository: 'poweredsoft/mysql-docker-backup'
+    repository: 'poweredsoft/docker-mysql-backup'
     command: 'buildAndPush'
     Dockerfile: 'PoweredSoft.Docker.MysqlBackup/Dockerfile'
     tags: |
