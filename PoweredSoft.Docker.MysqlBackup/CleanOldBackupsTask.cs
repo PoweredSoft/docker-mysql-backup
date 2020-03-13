@@ -1,16 +1,16 @@
-﻿using FluentFTP;
+﻿
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Threading.Tasks;
 
 namespace PoweredSoft.Docker.MysqlBackup
 {
+    /*
     public class CleanOldBackupsTask : ITask
     {
         private readonly IConfiguration configuration;
-        private readonly IFtpConnectionProvider ftpConnectionProvider;
 
-        public CleanOldBackupsTask(IConfiguration configuration, IFtpConnectionProvider ftpConnectionProvider)
+        public CleanOldBackupsTask(IConfiguration configuration)
         {
             this.configuration = configuration;
             this.ftpConnectionProvider = ftpConnectionProvider;
@@ -75,5 +75,5 @@ namespace PoweredSoft.Docker.MysqlBackup
             await ftp.DisconnectAsync();
             return 0;
         }
-    }
+    }*/
 }

@@ -1,28 +1,34 @@
 ﻿using Ionic.Zip;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
+using PoweredSoft.Docker.MysqlBackup.Notifications;
+using PoweredSoft.Storage.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PoweredSoft.Docker.MysqlBackup
+namespace PoweredSoft.Docker.MysqlBackup.Backup
 {
-    /*
-    public class MySQLBackupTask : ITask
+    public class BackupTask : ITask
     {
+        private readonly INotifyService notifyService;
+        private readonly IStorageProvider storageProvider;
         private readonly IConfiguration configuration;
-        private readonly IFtpConnectionProvider ftpConnectionProvider;
+        private readonly BackupOptions backupOptions;
 
-        public MySQLBackupTask(IConfiguration configuration, IFtpConnectionProvider ftpConnectionProvider)
+        public BackupTask(INotifyService notifyService, IStorageProvider storageProvider, IConfiguration configuration, BackupOptions backupOptions)
         {
+            this.notifyService = notifyService;
+            this.storageProvider = storageProvider;
             this.configuration = configuration;
-            this.ftpConnectionProvider = ftpConnectionProvider;
+            this.backupOptions = backupOptions;
         }
 
-        public int Priority => 1;
-        public string Name => "Backup Databases";
+        public int Priority { get; } = 1;
+        public string Name { get; } = "MySQL Database backup task.";
 
         protected virtual MySqlConnection GetDatabaseConnection()
         {
@@ -57,12 +63,6 @@ namespace PoweredSoft.Docker.MysqlBackup
 
         public async Task<int> RunAsync()
         {
-            var ftpBackupDir = configuration["FTP:BackupDestination"];
-            Console.WriteLine($"FTP Destination {ftpBackupDir}");
-
-            Console.WriteLine("Connecting to FTP Server...");
-            var ftp = await ftpConnectionProvider.GetConnectedClient();
-
             // get the mysql connection
             Console.WriteLine("Attempting connection to database...");
             using (var connection = GetDatabaseConnection())
@@ -72,8 +72,19 @@ namespace PoweredSoft.Docker.MysqlBackup
                 Console.WriteLine("Fetching database names to backup...");
                 var databaseNames = GetDatabaseNames(connection);
 
-                foreach(var databaseName in databaseNames)
+                foreach (var databaseName in databaseNames)
                 {
+                    if (backupOptions.Databases != "*")
+                    {
+                        var databasesToBackup = backupOptions.Databases.Split(',');
+                        if (!databasesToBackup.Any(t => t.Equals(databaseName, StringComparison.InvariantCultureIgnoreCase)))
+                        {
+                            Console.WriteLine($"Skipping {databaseName} not part of {backupOptions.Databases}");
+                            continue;
+                        }
+                    }
+
+
                     var tempFile = Path.GetTempFileName();
                     var zippedTempFile = Path.GetTempFileName();
 
@@ -111,11 +122,11 @@ namespace PoweredSoft.Docker.MysqlBackup
                             }
                         }
 
-                      
-                        var destination = $"{ftpBackupDir}/{databaseName}/{databaseName}_{DateTime.Now:yyyyMMdd_hhmmss_fff}.sql.zip";
+
+                        var destination = $"{backupOptions.BasePath}/{databaseName}_{DateTime.Now:yyyyMMdd_hhmmss_fff}.sql.zip";
                         using (var fs = new FileStream(zippedTempFile, FileMode.Open, FileAccess.Read))
                         {
-                            var result = await ftp.UploadAsync(fs, destination, existsMode: FtpExists.Overwrite, createRemoteDir: true);
+                            await storageProvider.WriteFileAsync(fs, destination);
                             Console.WriteLine("Succesfully transfered backup to FTP host.");
                         }
 
@@ -131,8 +142,7 @@ namespace PoweredSoft.Docker.MysqlBackup
                 };
             }
 
-            await ftp.DisconnectAsync();
             return 0;
         }
-    }*/
+    }
 }

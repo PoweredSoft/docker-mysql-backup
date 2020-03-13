@@ -1,0 +1,25 @@
+version: '2'
+
+services:
+  mariadb:
+    image: 'bitnami/mariadb:latest'
+    environment:
+      - MARIADB_ROOT_PASSWORD=example
+    ports:
+      - 3306:3306
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 9000:8080
+
+  minio1:
+    image: minio/minio
+    volumes:
+      - //c/data:/data
+    ports:
+      - "9001:9000"
+    command: server /data
+    environment:
+      MINIO_ACCESS_KEY: myminio
+      MINIO_SECRET_KEY: myexample
