@@ -12,4 +12,4 @@ RUN dotnet build PoweredSoft.Docker.MysqlBackup.csproj -c Release -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app .
-ENTRYPOINT ["dotnet", "PoweredSoft.Docker.Mysqlbackup.dll"]
+ENTRYPOINT ["dotnet", "PoweredSoft.Docker.MysqlBackup.dll"]
