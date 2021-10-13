@@ -14,9 +14,11 @@ pool:
 
 steps:
 
-- task: GitVersion@5
-  displayName: 'Git Version'
-  
+- powershell: |
+        Write-Host "Making the gitTag available as an environment variable."
+        $tag = git describe --tag
+        Write-Host "Tag is $tag"
+        Write-Host "##vso[task.setvariable variable=gitTag;]$tag"
 - task: Docker@2
   inputs:
     containerRegistry: 'PoweredSoftDockerHub'
@@ -25,4 +27,4 @@ steps:
     Dockerfile: 'PoweredSoft.Docker.MysqlBackup/Dockerfile'
     tags: |
       latest
-      $(GitVersion.NugetVersion)
+      $(gitTag)
