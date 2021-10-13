@@ -93,9 +93,30 @@ namespace PoweredSoft.Docker.MysqlBackup.Backup
                 }
             }
 
+            if (this.backupOptions.NotifySuccess)
+            {
+                await notifyService.SendNotification("Backup Success", $"The backup of the server {GetHostName(this.mySqlOptions)} is successful.", facts: new System.Collections.Generic.Dictionary<string, string>
+                {
+                    { "Completed At", $"{DateTimeOffset.UtcNow}" }
+                });
+            }
+
             return 0;
         }
-        
+
+        private static string GetHostName(MySqlOptions mysqlOptions)
+        {
+            try
+            {
+                var connectionStringBuilder = new MySqlConnectionStringBuilder(mysqlOptions.ConnectionString);
+                return connectionStringBuilder.Server;
+            }
+            catch
+            {
+                return "CANNOTRESOLVEHOSTNAME";
+            }
+        }
+
         private void ExecuteLinux(string databaseName, string tempFile)
         {
             var connectionStringBuilder = new MySqlConnectionStringBuilder(mySqlOptions.ConnectionString);

@@ -64,8 +64,7 @@ namespace PoweredSoft.Docker.MysqlBackup
                             await notifyService.SendNotification($"MYSQL BACKUP FAILED {GetHostName(mysqlOptions)}", $"Task {task.Name} failed", new System.Collections.Generic.Dictionary<string, string>
                             {
                                 { "ExceptionMessage", ex.Message },
-                                { "InnerExceptionMessage", ex.InnerException?.Message },
-                                { "StackTrace", ex.StackTrace }
+                                { "InnerExceptionMessage", ex.InnerException?.Message }
                             });
                         }
                         catch
