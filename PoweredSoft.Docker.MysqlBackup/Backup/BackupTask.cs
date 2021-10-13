@@ -1,6 +1,6 @@
 ﻿using Ionic.Zip;
 using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using PoweredSoft.Docker.MysqlBackup.Notifications;
 using PoweredSoft.Storage.Core;
 using System;
@@ -88,23 +88,15 @@ namespace PoweredSoft.Docker.MysqlBackup.Backup
                         }
                     }
 
-
-                    // using dump
-                    if (mySqlOptions.UseMySqlDump)
-                    {
-                        await BackupUsingMysqlDump(connection, databaseName);
-                    }
-                    else
-                    {
-                        await BackupUsingMysqlBackupPackage(connection, databaseName);
-                    }
+                    Console.WriteLine($"Currently on database {databaseName}");
+                    await BackupUsingMysqlDump(databaseName);
                 }
             }
 
             return 0;
         }
-
-        private async Task BackupUsingMysqlDump(MySqlConnection connection, string databaseName)
+        
+        private void ExecuteLinux(string databaseName, string tempFile)
         {
             var connectionStringBuilder = new MySqlConnectionStringBuilder(mySqlOptions.ConnectionString);
             var hostname = connectionStringBuilder.Server;
@@ -112,21 +104,40 @@ namespace PoweredSoft.Docker.MysqlBackup.Backup
             var username = connectionStringBuilder.UserID;
             var password = connectionStringBuilder.Password;
 
-            var dumpExe = mySqlOptions.MySqlDumpPath ?? "/bin/mysqldump";
+            var dumpExe = mySqlOptions.MySqlDumpPath ?? "mysqldump";
+            var command = $"{dumpExe} -h {hostname} -u {username} -p{password} {databaseName} --port {port} > {tempFile}";
+            var result = "";
+            using (var proc = new Process())
+            {
+                proc.StartInfo.FileName = "/bin/bash";
+                proc.StartInfo.Arguments = "-c \" " + command + " \"";
+                proc.StartInfo.UseShellExecute = false;
+                proc.StartInfo.RedirectStandardOutput = true;
+                proc.StartInfo.RedirectStandardError = true;
+                proc.Start();
 
-            // file names.
-            var tempFile = Path.GetTempFileName();
-            var zippedTempFile = Path.GetTempFileName();
+                result += proc.StandardOutput.ReadToEnd();
+                result += proc.StandardError.ReadToEnd();
+
+                Console.WriteLine(result);
+                proc.WaitForExit();
+            }
+        }
+
+        private void ExecuteWindows(string databaseName, string tempFile)
+        {
+            var connectionStringBuilder = new MySqlConnectionStringBuilder(mySqlOptions.ConnectionString);
+            var hostname = connectionStringBuilder.Server;
+            var port = connectionStringBuilder.Port;
+            var username = connectionStringBuilder.UserID;
+            var password = connectionStringBuilder.Password;
+
+            var dumpExe = mySqlOptions.MySqlDumpPath ?? "/mysqldump";
+
 
             // starting process to backup file.
             Console.WriteLine($"Starting backup with mysql dump on database {databaseName} on server {hostname}");
-
-
-            var finalDumpExe = dumpExe;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                finalDumpExe = $"\"{dumpExe}\"";
-
-            var command = $"{finalDumpExe} --column-statistics=0 -h {hostname} -u {username} -p{password} {databaseName} --port {port} > {tempFile}";
+            var command = $"\"{dumpExe}\" --column-statistics=0 -h {hostname} -u {username} -p{password} {databaseName} --port {port} > {tempFile}";
 
             var batFilePath = Path.Combine(
                 Path.GetTempPath(),
@@ -161,10 +172,10 @@ namespace PoweredSoft.Docker.MysqlBackup.Backup
 
                     proc.Close();
 
-                   
+
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw ex;
             }
@@ -172,7 +183,26 @@ namespace PoweredSoft.Docker.MysqlBackup.Backup
             {
                 File.Delete(batFilePath);
             }
+        }
 
+        private async Task BackupUsingMysqlDump(string databaseName)
+        {
+            
+
+            // file names.
+            var tempFile = Path.GetTempFileName();
+            var zippedTempFile = Path.GetTempFileName();
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                ExecuteWindows(databaseName, tempFile);
+            }
+            else
+            {
+                ExecuteLinux(databaseName, tempFile);
+            }
+
+           
             Console.WriteLine($"Starting to compress backup...");
             using (var zip = new ZipFile())
             {
@@ -205,64 +235,6 @@ namespace PoweredSoft.Docker.MysqlBackup.Backup
             catch (Exception ex)
             {
                 Console.WriteLine($"Could not clean up temp file {zippedTempFile} {ex.Message}");
-            }
-        }
-
-        private async Task BackupUsingMysqlBackupPackage(MySqlConnection connection, string databaseName)
-        {
-            var tempFile = Path.GetTempFileName();
-            var zippedTempFile = Path.GetTempFileName();
-
-            // switch to this database.
-            using (var command = connection.CreateCommand())
-            {
-                // switch to the current database.
-                Console.WriteLine($"Switching to database: {databaseName}");
-                command.CommandText = $"use `{databaseName}`;";
-                command.ExecuteNonQuery();
-                Console.WriteLine($"Switched on {databaseName}");
-
-                using (MySqlBackup mb = new MySqlBackup(command))
-                {
-                    Console.WriteLine($"Exporting backup to temp file {tempFile}");
-                    mb.ExportToFile(tempFile);
-                    Console.WriteLine($"Exported backup to temp file {tempFile}");
-
-                    Console.WriteLine($"Starting to compress backup...");
-                    using (var zip = new ZipFile())
-                    {
-                        zip.AddFile(tempFile, "").FileName = $"{databaseName}.sql";
-                        zip.Save(zippedTempFile);
-
-                        try
-                        {
-                            File.Delete(tempFile);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Could not clean up temp file {tempFile} {ex.Message}");
-                        }
-
-                        Console.WriteLine("Succesfully created compressed mysql backup file.");
-                    }
-                }
-
-
-                var destination = $"{backupOptions.BasePath}/{databaseName}_{DateTime.Now:yyyyMMdd_hhmmss_fff}.sql.zip";
-                using (var fs = new FileStream(zippedTempFile, FileMode.Open, FileAccess.Read))
-                {
-                    await storageProvider.WriteFileAsync(fs, destination);
-                    Console.WriteLine("Succesfully transfered backup to storage");
-                }
-
-                try
-                {
-                    File.Delete(zippedTempFile);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Could not clean up temp file {zippedTempFile} {ex.Message}");
-                }
             }
         }
     }

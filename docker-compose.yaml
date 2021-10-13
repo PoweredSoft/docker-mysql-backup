@@ -1,25 +1,50 @@
 version: '2'
 
+networks:
+    backup:
+
 services:
   mariadb:
     image: 'bitnami/mariadb:latest'
     environment:
       - MARIADB_ROOT_PASSWORD=example
     ports:
-      - 3306:3306
+      - 3308:3306
+    networks:
+        - backup
   adminer:
     image: adminer
     restart: always
     ports:
-      - 9000:8080
-
+      - 9002:8080
+    networks:
+        - backup
   minio1:
+    networks:
+        - backup
     image: minio/minio
-    volumes:
-      - //c/data:/data
     ports:
-      - "9001:9000"
+      - 9001:9000
     command: server /data
     environment:
       MINIO_ACCESS_KEY: myminio
       MINIO_SECRET_KEY: myexample
+  test:
+    networks:
+        - backup
+    build: PoweredSoft.Docker.MysqlBackup
+    depends_on:
+        - minio1
+        - mariadb
+    environment:
+        - Backup_Databases=yay
+        - Retention__Enabled=true
+        - Retention__Days=1
+        - S3__Enabled=true
+        - S3__Endpoint=http://minio1:9000
+        - S3__BucketName=backup-test
+        - S3__AccessKey=myminio
+        - S3__Secret=myexample
+        - S3__Minio=true
+        - MySql__ConnectionString=Server=mariadb;Port=3306;Uid=root;Pwd=example;SslMode=none
+        - MySql__UseMySqlDump=true

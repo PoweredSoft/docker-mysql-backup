@@ -14,18 +14,17 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="DotNetZip" Version="1.13.3" />
+    <PackageReference Include="DotNetZip" Version="1.15.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.0" />
+    <PackageReference Include="MySqlConnector" Version="1.3.13" />
     <PackageReference Include="PoweredSoft.Storage.Core" Version="2.0.3" />
     <PackageReference Include="PoweredSoft.Storage.S3" Version="2.0.3" />
     <PackageReference Include="PoweredSoft.Storage.Azure" Version="2.0.3" />
     <PackageReference Include="PoweredSoft.Storage.Physical" Version="2.0.3" />
-    <PackageReference Include="MySql.Data" Version="8.0.17" />
-    <PackageReference Include="MySqlBackup.NET" Version="2.3.1" />
     <PackageReference Include="Teams.Notifications" Version="0.1.1" />
     <PackageReference Include="Slack.Webhooks" Version="1.1.3" />
   </ItemGroup>

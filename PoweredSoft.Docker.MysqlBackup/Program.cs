@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using PoweredSoft.Docker.MysqlBackup.Backup;
 using PoweredSoft.Docker.MysqlBackup.Notifications;
 using PoweredSoft.Docker.MysqlBackup.Notifications.Slack;
@@ -118,6 +118,7 @@ namespace PoweredSoft.Docker.MysqlBackup
             services.AddTransient<INotifyService, NotifyService>();
             services.AddTransient<INotificationService, TeamsNotificationService>();
             services.AddTransient<INotificationService, SlackNotificationService>();
+            services.AddTransient<INotificationService, StdErrNotificationService>();
 
             // storage provider.
             ConfigureStorageProvider(services);
