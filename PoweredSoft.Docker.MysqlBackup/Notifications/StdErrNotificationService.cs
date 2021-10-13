@@ -15,7 +15,7 @@ namespace PoweredSoft.Docker.MysqlBackup.Notifications
             {
                 foreach (var fact in facts)
                 {
-                    Console.Write($"{fact.Key}: {fact.Value}");
+                    Console.WriteLine($"{fact.Key}: {fact.Value}");
                 }
             }
             Console.WriteLine("------------------------------------------------------------------------------------------");

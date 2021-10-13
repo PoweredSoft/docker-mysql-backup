@@ -37,7 +37,8 @@ services:
         - minio1
         - mariadb
     environment:
-        - Backup_Databases=yay
+        - Backup__Databases=*
+        - Backup__NotifySuccess=true
         - Retention__Enabled=true
         - Retention__Days=1
         - S3__Enabled=true
