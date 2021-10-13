@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MySql.Data.MySqlClient;
 using PoweredSoft.Docker.MysqlBackup.Backup;
 using PoweredSoft.Docker.MysqlBackup.Notifications;
 using PoweredSoft.Docker.MysqlBackup.Notifications.Slack;
@@ -34,6 +35,7 @@ namespace PoweredSoft.Docker.MysqlBackup
             {
                 var tasks = serviceProvider.GetServices<ITask>();
                 var notifyService = serviceProvider.GetRequiredService<INotifyService>();
+                var mysqlOptions = serviceProvider.GetRequiredService<MySqlOptions>();
 
                 var taskByPriority = tasks.OrderBy(t => t.Priority);
 
@@ -59,10 +61,11 @@ namespace PoweredSoft.Docker.MysqlBackup
                     {
                         try
                         {
-                            await notifyService.SendNotification($"MYSQL BACKUP FAILED", $"Task {task.Name} failed", new System.Collections.Generic.Dictionary<string, string>
+                            await notifyService.SendNotification($"MYSQL BACKUP FAILED {GetHostName(mysqlOptions)}", $"Task {task.Name} failed", new System.Collections.Generic.Dictionary<string, string>
                             {
                                 { "ExceptionMessage", ex.Message },
-                                { "InnerExceptionMessage", ex.InnerException?.Message }
+                                { "InnerExceptionMessage", ex.InnerException?.Message },
+                                { "StackTrace", ex.StackTrace }
                             });
                         }
                         catch
@@ -74,6 +77,19 @@ namespace PoweredSoft.Docker.MysqlBackup
                     Console.WriteLine("Waiting a litle between tasks..");
                     await Task.Delay(2000);
                 }
+            }
+        }
+
+        private static string GetHostName(MySqlOptions mysqlOptions)
+        {
+            try
+            {
+                var connectionStringBuilder = new MySqlConnectionStringBuilder(mysqlOptions.ConnectionString);
+                return connectionStringBuilder.Server;
+            }
+            catch
+            {
+                return "CANNOTRESOLVEHOSTNAME";
             }
         }
 
@@ -158,10 +174,10 @@ namespace PoweredSoft.Docker.MysqlBackup
                 return t;
             });
 
-            services.AddSingleton<BackupOptions>(ctx =>
+            services.AddSingleton<MySqlOptions>(ctx =>
             {
-                var t = new BackupOptions();
-                configuration.Bind("Backup", t);
+                var t = new MySqlOptions();
+                configuration.Bind("MySql", t);
                 return t;
             });
 
